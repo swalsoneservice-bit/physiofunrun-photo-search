@@ -1,1 +1,90 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marathon Photo Search</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; }
+        #preview { width: 100%; max-width: 300px; border-radius: 8px; margin-top: 10px; display: none; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 20px; }
+        .gallery img { width: 100%; border-radius: 8px; }
+        button { background: #00b894; color: white; border: none; padding: 12px 20px; border-radius: 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h2>🏃‍♂️ မာရသွန် ဓာတ်ပုံ ရှာဖွေစနစ်</h2>
+    <p>သင့် Selfie ဓာတ်ပုံကို တင်၍ မာရသွန်ပွဲ ရိုက်ထားသော ပုံများကို ရှာပါ</p>
+    
+    <input type="file" id="imageInput" accept="image/*" capture="user" onchange="previewImage(event)">
+    <br>
+    <img id="preview">
+    <br><br>
+    <button onclick="searchPhoto()">🔍 ဓာတ်ပုံ ရှာမည်</button>
+
+    <h4 id="status"></h4>
+    <div class="gallery" id="gallery"></div>
+</div>
+
+<script>
+    // Step 3 တွင် ရရှိခဲ့သော Render API URL ထည့်ပါ
+    const API_URL = "https://marathon-api.onrender.com/search";
+
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const output = document.getElementById('preview');
+            output.src = reader.result;
+            output.style.display = 'block';
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    async function searchPhoto() {
+        const fileInput = document.getElementById('imageInput');
+        const status = document.getElementById('status');
+        const gallery = document.getElementById('gallery');
+
+        if (fileInput.files.length === 0) {
+            alert("ကျေးဇူးပြု၍ Selfie ပုံတစ်ပုံ ရွေးပေးပါ!");
+            return;
+        }
+
+        status.innerText = "🔍 မျက်နှာအား ရှာဖွေစစ်ဆေးနေပါသည်...";
+        gallery.innerHTML = "";
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.matched_photos.length === 0) {
+                status.innerText = "❌ သင့် မျက်နှာနှင့် ကိုက်ညီသော ဓာတ်ပုံ မတွေ့ရှိပါ။";
+                return;
+            }
+
+            status.innerText = `🎉 သင့် ဓာတ်ပုံ (${data.matched_photos.length}) ပုံ တွေ့ရှိပါသည်။`;
+            data.matched_photos.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                gallery.appendChild(img);
+            });
+
+        } catch (error) {
+            status.innerText = "⚠️ Server နှင့် ချိတ်ဆက်ရာတွင် အဆင်မပြေပါ။";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>
